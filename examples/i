@@ -1,0 +1,2 @@
+gcc unzstd.c  -larchive -o unzstd -O0 -ggdb3
+./unzstd -t -f test.tar.pzst

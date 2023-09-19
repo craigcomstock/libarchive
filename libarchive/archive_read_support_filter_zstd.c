@@ -79,6 +79,8 @@ static int	zstd_bidder_bid(struct archive_read_filter_bidder *,
 		    struct archive_read_filter *);
 static int	zstd_bidder_init(struct archive_read_filter *);
 
+enum { ZSTD = 1, PZSTD };
+static int zstd_type;
 static const struct archive_read_filter_bidder_vtable
 zstd_bidder_vtable = {
 	.bid = zstd_bidder_bid,
@@ -127,9 +129,17 @@ zstd_bidder_bid(struct archive_read_filter_bidder *self,
 
 	prefix = archive_le32dec(buffer);
 	if (prefix == zstd_magic)
+        {
+printf("CRAIG, type is ZSTD\n");
+                zstd_type = ZSTD;
 		return (32);
+        }
 	if ((prefix & zstd_magic_skippable_mask) == zstd_magic_skippable_start)
+        {
+printf("CRAIG, type is PZSTD\n");
+                 zstd_type = PZSTD;
 		return (32);
+        }
 
 	return (0);
 }
@@ -146,7 +156,14 @@ zstd_bidder_init(struct archive_read_filter *self)
 {
 	int r;
 
-	r = __archive_read_program(self, "zstd -d -qq");
+        if (zstd_type == PZSTD)
+        {
+                r = __archive_read_program(self, "pzstd -d -qq");
+        }
+        else
+        {
+        	r = __archive_read_program(self, "zstd -d -qq");
+        }
 	/* Note: We set the format here even if __archive_read_program()
 	 * above fails.  We do, after all, know what the format is
 	 * even if we weren't able to read it. */
